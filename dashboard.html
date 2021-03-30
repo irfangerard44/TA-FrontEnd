@@ -1,0 +1,139 @@
+<html>
+    <head>
+        <script src="./ogma.min.js"></script>
+    </head>
+    <body style="background: #ffffff; margin: 0px;">
+    <style>
+     ul li {
+         padding: 0 2em 0 2em;
+     }
+
+     ul li b{
+         font-family: 'Ubuntu', sans-serif;
+     }
+     
+    </style>
+        <div style="background-color: #f9f9f9;color: #1f1f1f;border-bottom: 1px solid #5555;border-radius: 1em;">
+            <ul style="display: flex;list-style: none; margin: 0px; padding: 1em;">
+                <li>
+                    <b>Ukuran Data</b>
+                    <input type="number" id="ukuran" value="200">
+                </li>
+                <li>
+                    <!-- Waktu Mulai -->
+                    <b> Jarak waktu</b>
+                    <select id="jam_start">
+                        <option value="now-3h">3 jam terakhir</option>
+                        <option value="now-6h">6 jam terakhir</option>
+                        <option value="now-12h">12 jam terakhir</option>
+                        <option value="now-24h">24 jam terakhir</option>
+                    </select>
+                </li>
+                <li>
+                    <b>Stemming</b>
+                    <input type="checkbox" id="stemming" name="stemming">
+                </li>
+                <!-- <li>
+                    <b> Waktu Akhir</b>
+                    <select id="jam_end">
+                        <option value="0h">Sekarang</option>
+                        <option value="now-6h">6 jam sebelumnya</option>
+                        <option value="now-12h">12 jam sebelumnya</option>
+                        <option value="now-24h">24 jam sebelumnya</option>
+                    </select>
+                </li> -->
+                <li>
+                    <button id="custom">Tampilkan</button>
+                </li>
+                <!-- <li>
+                    <button id="sekarang">Tampilkan Data Sekarang</button>
+                </li> -->
+            </ul>
+            
+        </div>
+        <div id="app" style="width: 100%;height: 90%;">
+        </div>
+        <script>
+        var n,e;
+
+        let ukuran = document.getElementById("ukuran");
+        let jam_awal = document.getElementById("jam_start");
+        let jam_akhir = document.getElementById("jam_end");
+        let okeh = document.getElementById("custom");
+        let alamat_api = "http://localhost:2000/newsClustering";
+
+        async function xx(urlapi){
+            let a = await fetch(urlapi).then(r => r.json());
+            n = a.data.node.map(r => {
+                let xxx = r.an[Object.keys(r.an)];
+                return {id: xxx.id,name: xxx.name,data:{url: ""},attributes:{color: "green",text: xxx.name},data: {}}
+            });
+            nn = a.data.edge.map(r =>{
+                let yyy = r.ae[Object.keys(r.ae)];
+                return {id: Object.keys(r.ae)[0],data:{url: yyy.link},url:"xxx",name: yyy.content,attributes:{color: "red",text: "sumber = "+ yyy.sumber +"\n content  = "+ yyy.content}}
+            })
+            e = a.data.edge.map(r =>{
+                let yyy = r.ae[Object.keys(r.ae)];
+               
+                return {id: Object.keys(r.ae)[0],source: yyy.id,target: Object.keys(r.ae)[0]};
+            });
+            var ogma = new Ogma({
+                container: 'app'
+            });
+
+             ogma.events.onClick(evt => {
+                const target = evt.target,
+                    button = evt.button, // can be "left", "middle" or "right"
+                    x = evt.x,
+                    y = evt.y;
+
+                let clickTarget;
+                if (!target) {
+                    clickTarget = 'background';
+                } else {
+                    if(target.isNode){
+                        let id = target.getAttribute();
+                        // console.log('Nodes selected: ' + ogma.getSelectedNodes().getData('url'));
+                        window.open(ogma.getSelectedNodes().getData('url'),"");
+                        window.focus()
+                    }
+                    
+                }
+                
+            });
+
+            console.log(n);
+            
+            // ogma.addNodes(n.concat(nn));
+            ogma.addNodes(n.concat(nn));
+            ogma.addEdges(e);
+
+            ogma.events.onLayoutStart(layout => {
+                return console.log('Layout started', layout);
+            });
+
+            ogma.layouts.forceLink().then(() => {
+                ogma.view.locateGraph({
+                    easing: 'quadraticOut',
+                    duration: 100
+                });     
+            });
+            ogma.view.setZoom(10)
+        };
+
+        okeh.addEventListener("click",function(){
+            var checkBox = document.getElementById("stemming");
+            let ekor_api = "";
+            if (checkBox.checked == true){
+                ekor_api = alamat_api + "?size="+ukuran.value+"&start="+jam_awal.value+"&end=now&stemming=true";
+                // console.log("ada")
+            } else {
+                // console.log("tidak ada")
+                ekor_api = alamat_api + "?size="+ukuran.value+"&start="+jam_awal.value+"&end=now";
+            }
+            console.log(ekor_api)
+            xx(ekor_api)
+        })
+        </script>
+    </body>
+</html>
